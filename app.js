@@ -62,6 +62,8 @@ import animationRouter from "./routes/animation.route.js";
 app.use("/api/v1/users", ensureDatabaseConnected, userRouter);
 app.use("/api/v1/animations", ensureDatabaseConnected, animationRouter);
 
+
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
@@ -73,6 +75,10 @@ app.use((err, req, res, next) => {
     errors: err.errors || [],
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
+});
+
+app.get("/", (req, res) => {
+  res.send("Welcome to the Creatx");
 });
 
 export { app };
