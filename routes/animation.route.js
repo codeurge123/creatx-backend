@@ -13,7 +13,8 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-// Public routes (must come before /:id routes)
+// Public routes (for library/community tabs)
+// These do not require verifyJWT so guests can browse animations.
 router.route("/public").get(getPublicAnimations);
 
 // Secured routes

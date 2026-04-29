@@ -1,15 +1,41 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
+import { ensureDatabaseConnected } from "./middlewares/db.middleware.js";
+
+dotenv.config({
+  path: ".env",
+});
 
 const app = express();
 
 const allowedOrigins = (process.env.CORS_ORIGIN || "").split(",").map((o) => o.trim()).filter(Boolean);
 
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Vary", "Origin");
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    );
+  }
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  return next();
+});
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl)
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
@@ -33,8 +59,8 @@ import userRouter from "./routes/user.route.js";
 import animationRouter from "./routes/animation.route.js";
 
 // Routes declaration
-app.use("/api/v1/users", userRouter);
-app.use("/api/v1/animations", animationRouter);
+app.use("/api/v1/users", ensureDatabaseConnected, userRouter);
+app.use("/api/v1/animations", ensureDatabaseConnected, animationRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

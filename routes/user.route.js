@@ -28,12 +28,10 @@ router.route("/refresh-token").post(refreshAccessToken);
 router.route("/change-password").post(verifyJWT, changeCurrentPassword);
 router.route("/current-user").get(verifyJWT, getCurrentUser);
 router.route("/update-account").patch(verifyJWT, updateAccountDetails);
+router.route("/likes").get(verifyJWT, getUserLikedAnimations);
 
 // Public user-facing endpoints
 router.route("/:id/shared").get(getUserSharedAnimations);
 router.route("/:id").get(getUserById);
-
-// Auth protected endpoints
-router.route("/likes").get(verifyJWT, getUserLikedAnimations);
 
 export default router;

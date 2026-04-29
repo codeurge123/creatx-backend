@@ -25,21 +25,27 @@ const generateAccessAndRefereshTokens = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const normalizedName = req.body.name?.trim();
+  const normalizedEmail = req.body.email?.trim().toLowerCase();
+  const password = req.body.password;
 
-  if ([name, email, password].some((field) => field?.trim() === "")) {
+  if ([normalizedName, normalizedEmail, password].some((field) => !field || field?.trim?.() === "")) {
     throw new ApiError(400, "All fields are required");
   }
 
-  const existedUser = await User.findOne({ email });
+  if (password.length < 8) {
+    throw new ApiError(400, "Password must be at least 8 characters long");
+  }
+
+  const existedUser = await User.findOne({ email: normalizedEmail });
 
   if (existedUser) {
     throw new ApiError(409, "User with email already exists");
   }
 
   const user = await User.create({
-    name,
-    email,
+    name: normalizedName,
+    email: normalizedEmail,
     password,
   });
 
@@ -57,10 +63,11 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const email = req.body.email?.trim().toLowerCase();
+  const password = req.body.password;
 
-  if (!email) {
-    throw new ApiError(400, "email is required");
+  if (!email || !password) {
+    throw new ApiError(400, "Email and password are required");
   }
 
   const user = await User.findOne({ email });
@@ -121,9 +128,11 @@ const logoutUser = asyncHandler(async (req, res) => {
     }
   );
 
+  const isDevelopment = process.env.NODE_ENV !== "production";
   const options = {
     httpOnly: true,
-    secure: true,
+    secure: !isDevelopment,
+    sameSite: "lax",
   };
 
   return res
@@ -157,22 +166,24 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       throw new ApiError(401, "Refresh token is expired or used");
     }
 
+    const isDevelopment = process.env.NODE_ENV !== "production";
     const options = {
       httpOnly: true,
-      secure: true,
+      secure: !isDevelopment,
+      sameSite: "lax",
     };
 
-    const { accessToken, newRefreshToken } =
+    const { accessToken, refreshToken } =
       await generateAccessAndRefereshTokens(user._id);
 
     return res
       .status(200)
       .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", newRefreshToken, options)
+      .cookie("refreshToken", refreshToken, options)
       .json(
         new ApiResponse(
           200,
-          { accessToken, refreshToken: newRefreshToken },
+          { accessToken, refreshToken },
           "Access token refreshed"
         )
       );
